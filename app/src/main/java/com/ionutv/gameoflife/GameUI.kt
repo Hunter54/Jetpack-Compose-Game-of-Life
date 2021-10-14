@@ -18,7 +18,7 @@ const val gridsize = 14
 
 @Composable
 fun DisplayApp(scaffoldState: ScaffoldState, viewModel: MainViewModel, modifier: Modifier = Modifier) {
-    val gridState by viewModel.gridState.observeAsState(mutableSetOf())
+    val gridState by viewModel.gridState.observeAsState(Array(gridsize){ Array(gridsize) {false} })
 
     Scaffold(modifier = modifier.fillMaxSize(), scaffoldState = scaffoldState, topBar = {
         TopAppBar(title = {
@@ -36,8 +36,8 @@ fun DisplayApp(scaffoldState: ScaffoldState, viewModel: MainViewModel, modifier:
             GameGrid(
                 state = gridState
             )
-            {
-                viewModel.onGridUpdate(gridState ,it)
+            { row, col ->
+                viewModel.onGridUpdate(gridState,row ,col)
             }
             Controls(gridState,viewModel)
 
@@ -46,13 +46,13 @@ fun DisplayApp(scaffoldState: ScaffoldState, viewModel: MainViewModel, modifier:
 }
 
 @Composable
-fun GameGrid(state: MutableSet<Pair<Int, Int>>, onUpdate: (m: Pair<Int, Int>) -> Unit) {
+fun GameGrid(state: Array<Array<Boolean>>, onUpdate: (row: Int, col : Int) -> Unit) {
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        for (row in 0..gridsize) {
+        for (row in 0 until gridsize) {
             Row {
-                for (col in 0..gridsize) {
-                    val color = if (state.contains(Pair(row, col)))
+                for (col in 0 until gridsize) {
+                    val color = if (state[row] [col])
                         MaterialTheme.colors.secondary
                     else MaterialTheme.colors.primaryVariant
 
@@ -63,8 +63,7 @@ fun GameGrid(state: MutableSet<Pair<Int, Int>>, onUpdate: (m: Pair<Int, Int>) ->
                             .padding(all = boxPadding)
                             .width(defaultSpacerSize)
                             .clickable {
-                                state.plus(Pair(row, col))
-                                onUpdate(Pair(row, col))
+                                onUpdate(row,col)
                             }
                     )
                 }
@@ -74,7 +73,7 @@ fun GameGrid(state: MutableSet<Pair<Int, Int>>, onUpdate: (m: Pair<Int, Int>) ->
 }
 
 @Composable
-fun Controls(state: MutableSet<Pair<Int, Int>>,viewModel: MainViewModel,modifier: Modifier = Modifier) {
+fun Controls(state: Array<Array<Boolean>>,viewModel: MainViewModel,modifier: Modifier = Modifier) {
     var job : Job= remember{
         Job()
     }

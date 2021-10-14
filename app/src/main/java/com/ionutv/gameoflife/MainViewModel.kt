@@ -8,11 +8,11 @@ import kotlinx.coroutines.*
 
 class MainViewModel : ViewModel() {
 
-    private val _gridState = MutableLiveData<MutableSet<Pair<Int, Int>>>()
-    val gridState: LiveData<MutableSet<Pair<Int, Int>>>
+    private val _gridState = MutableLiveData<Array<Array<Boolean>>>()
+    val gridState: LiveData<Array<Array<Boolean>>>
         get() = _gridState
 
-    fun play(state: MutableSet<Pair<Int, Int>>) = viewModelScope.launch {
+    fun play(state: Array<Array<Boolean>>) = viewModelScope.launch {
         while (true) {
             delay(100)
             if (state.isEmpty()) {
@@ -22,20 +22,14 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun onGridUpdate(gridState: MutableSet<Pair<Int, Int>>, cell: Pair<Int, Int>) {
-        _gridState.value = mutableSetOf<Pair<Int, Int>>()
-            .apply {
-                addAll(gridState)
-                if (contains(cell)) {
-                    remove(cell)
-                } else {
-                    add(cell)
-                }
-            }
+    fun onGridUpdate(gridState : Array<Array<Boolean>>,row: Int, col: Int) {
+        val grid = gridState.copyOf()
+        grid[row][col] = !grid[row][col]
+        _gridState.value = grid
     }
 
     fun resetGrid() {
-        _gridState.value = mutableSetOf()
+        _gridState.value = Array(gridsize){ Array(gridsize) {false} }
     }
 
 }

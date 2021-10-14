@@ -10,6 +10,6 @@ val Shapes = Shapes(
     large = RoundedCornerShape(0.dp)
 )
 
-val defaultSpacerSize = 22.dp
+val defaultSpacerSize = 24.dp
 
 val boxPadding = 1.dp
