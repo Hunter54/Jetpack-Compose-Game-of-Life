@@ -58,8 +58,11 @@ fun DisplayApp(
                     .offset(y = -defaultSpacerSize),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Controls(viewModel, onPlay = {
+                Controls( onPlay = {
                     viewModel.play(gridSize.toInt())
+                },
+                onReset ={
+                    viewModel.resetGrid(gridSize.toInt())
                 })
                 SizeSlider(gridsize = gridSize) {
                     gridSize = it
@@ -74,17 +77,17 @@ fun GameGrid(
     viewModel: MainViewModel,
     gridSize: Int,
     modifier: Modifier = Modifier,
-    onUpdate: (state: MutableSet<Pair<Int, Int>>, cell: Pair<Int, Int>) -> Unit
+    onUpdate: (state: Array<Array<Boolean>>, cell: Pair<Int, Int>) -> Unit
 ) {
-    val gridState by viewModel.gridState.observeAsState(mutableSetOf())
+    val gridState by viewModel.gridState.observeAsState(Array(gridSize){ Array(gridSize) {false} })
     Column(
         horizontalAlignment = Alignment.CenterHorizontally, modifier =
         modifier.fillMaxWidth()
     ) {
-        for (row in 0..gridSize) {
+        for (row in 0 until gridSize) {
             Row {
-                for (col in 0..gridSize) {
-                    val color = if (gridState.contains(Pair(row, col)))
+                for (col in 0 until gridSize) {
+                    val color = if (gridState[row][col])
                         MaterialTheme.colors.secondary
                     else MaterialTheme.colors.primaryVariant
 
@@ -96,7 +99,6 @@ fun GameGrid(
                             .background(color)
                             .border(boxPadding, Color.Black)
                             .clickable {
-                                gridState.plus(Pair(row, col))
                                 onUpdate(gridState, Pair(row, col))
                             })
 
@@ -117,7 +119,7 @@ fun SizeSlider(gridsize: Float, onGridSizeUpdated: (gridSize: Float) -> Unit) {
 }
 
 @Composable
-fun Controls(viewModel: MainViewModel, onPlay: () -> Job, modifier: Modifier = Modifier) {
+fun Controls( onPlay: () -> Job, modifier: Modifier = Modifier,onReset : () -> Unit) {
     var job: Job? by rememberSaveable {
         mutableStateOf(null)
     }
@@ -151,7 +153,7 @@ fun Controls(viewModel: MainViewModel, onPlay: () -> Job, modifier: Modifier = M
                     it.cancel(CancellationException("User canceled"))
                 }
             }
-            viewModel.resetGrid()
+            onReset()
         }) {
             Text(text = "Reset")
         }
