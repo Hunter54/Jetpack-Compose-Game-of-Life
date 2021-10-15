@@ -1,72 +1,68 @@
 package com.ionutv.gameoflife
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.ionutv.gameoflife.ui.theme.boxPadding
 import com.ionutv.gameoflife.ui.theme.defaultSpacerSize
 import kotlinx.coroutines.*
 import java.util.concurrent.CancellationException
 
-const val gridsize = 14
 
 @Composable
-fun DisplayApp(scaffoldState: ScaffoldState, viewModel: MainViewModel, modifier: Modifier = Modifier) {
-    val gridState by viewModel.gridState.observeAsState(mutableSetOf())
+fun DisplayApp(
+    scaffoldState: ScaffoldState,
+    modifier: Modifier = Modifier,
+    viewModel: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
+) {
+    var gridSize by remember { mutableStateOf(14f) }
 
     Scaffold(modifier = modifier.fillMaxSize(), scaffoldState = scaffoldState, topBar = {
         TopAppBar(title = {
             Text(text = "Game of Life")
         })
     }) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxSize(),
         ) {
-            Spacer(modifier = Modifier.height(defaultSpacerSize))
-            Text(text = "Select a few boxes and then click start")
-            Spacer(modifier = Modifier.height(defaultSpacerSize))
+            Text(text = "Select a few boxes and then click start",modifier = Modifier
+                .height(defaultSpacerSize)
+                .align(Alignment.TopCenter)
+                .offset(y = defaultSpacerSize))
+
             GameGrid(
-                state = gridState
+                viewModel, gridSize.toInt(),
+                Modifier
+                    .align(Alignment.Center)
+                    .offset(y = -defaultSpacerSize)
             )
-            {
-                viewModel.onGridUpdate(gridState ,it)
+            { gridState, cell ->
+                viewModel.onGridUpdate(gridState, cell)
             }
-            Controls(gridState,viewModel)
-
-        }
-    }
-}
-
-@Composable
-fun GameGrid(state: MutableSet<Pair<Int, Int>>, onUpdate: (m: Pair<Int, Int>) -> Unit) {
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        for (row in 0..gridsize) {
-            Row {
-                for (col in 0..gridsize) {
-                    val color = if (state.contains(Pair(row, col)))
-                        MaterialTheme.colors.secondary
-                    else MaterialTheme.colors.primaryVariant
-
-                    Divider(
-                        thickness = defaultSpacerSize,
-                        color = color,
-                        modifier = Modifier
-                            .padding(all = boxPadding)
-                            .width(defaultSpacerSize)
-                            .clickable {
-                                state.plus(Pair(row, col))
-                                onUpdate(Pair(row, col))
-                            }
-                    )
+            Column(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = -defaultSpacerSize),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Controls(viewModel, onPlay = {
+                    viewModel.play(gridSize.toInt())
+                })
+                SizeSlider(gridsize = gridSize) {
+                    gridSize = it
                 }
             }
         }
@@ -74,36 +70,85 @@ fun GameGrid(state: MutableSet<Pair<Int, Int>>, onUpdate: (m: Pair<Int, Int>) ->
 }
 
 @Composable
-fun Controls(state: MutableSet<Pair<Int, Int>>,viewModel: MainViewModel,modifier: Modifier = Modifier) {
-    var job : Job= remember{
-        Job()
+fun GameGrid(
+    viewModel: MainViewModel,
+    gridSize: Int,
+    modifier: Modifier = Modifier,
+    onUpdate: (state: MutableSet<Pair<Int, Int>>, cell: Pair<Int, Int>) -> Unit
+) {
+    val gridState by viewModel.gridState.observeAsState(mutableSetOf())
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally, modifier =
+        modifier.fillMaxWidth()
+    ) {
+        for (row in 0..gridSize) {
+            Row {
+                for (col in 0..gridSize) {
+                    val color = if (gridState.contains(Pair(row, col)))
+                        MaterialTheme.colors.secondary
+                    else MaterialTheme.colors.primaryVariant
+
+                    Box(
+                        Modifier
+                            .fillMaxWidth(1f / gridSize)
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .background(color)
+                            .border(boxPadding, Color.Black)
+                            .clickable {
+                                gridState.plus(Pair(row, col))
+                                onUpdate(gridState, Pair(row, col))
+                            })
+
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SizeSlider(gridsize: Float, onGridSizeUpdated: (gridSize: Float) -> Unit) {
+    Text(text = "GridSize is ${gridsize.toInt()}")
+    Slider(value = gridsize,steps = 14, valueRange = 5f..22f,
+        modifier = Modifier.fillMaxWidth(0.75f),
+        onValueChange = {
+            onGridSizeUpdated(it)
+        })
+}
+
+@Composable
+fun Controls(viewModel: MainViewModel, onPlay: () -> Job, modifier: Modifier = Modifier) {
+    var job: Job? by rememberSaveable {
+        mutableStateOf(null)
     }
     Row(
-        modifier = modifier.padding(all = defaultSpacerSize),
-        horizontalArrangement = Arrangement.Center
+
+        modifier = modifier
+            .padding(all = defaultSpacerSize)
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Button(onClick = {
-            job.cancel()
-            job = viewModel.play(state)
+            job?.cancel()
+            job = onPlay()
         }) {
             Text(text = "Start")
         }
-        Spacer(Modifier.width(defaultSpacerSize))
         Button(onClick = {
-            job.let {
+            job?.let {
                 if (it.isActive) {
-                    job.cancel(CancellationException("User canceled"))
+                    it.cancel(CancellationException("User canceled"))
                 }
             }
         }) {
             Text(text = "Stop")
         }
 
-        Spacer(Modifier.width(defaultSpacerSize))
         Button(onClick = {
-            job.let {
+            job?.let {
                 if (it.isActive) {
-                    job.cancel(CancellationException("User canceled"))
+                    it.cancel(CancellationException("User canceled"))
                 }
             }
             viewModel.resetGrid()

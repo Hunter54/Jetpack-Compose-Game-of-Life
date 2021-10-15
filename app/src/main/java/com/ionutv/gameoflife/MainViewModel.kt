@@ -8,17 +8,21 @@ import kotlinx.coroutines.*
 
 class MainViewModel : ViewModel() {
 
-    private val _gridState = MutableLiveData<MutableSet<Pair<Int, Int>>>()
+    private val _gridState = MutableLiveData<MutableSet<Pair<Int, Int>>>(mutableSetOf())
     val gridState: LiveData<MutableSet<Pair<Int, Int>>>
         get() = _gridState
 
-    fun play(state: MutableSet<Pair<Int, Int>>) = viewModelScope.launch {
-        while (true) {
-            delay(100)
-            if (state.isEmpty()) {
-                cancel()
+    fun play(gridSize : Int) = viewModelScope.launch {
+        withContext(Dispatchers.Default)
+        {
+            while (isActive) {
+                val state = _gridState.value ?: mutableSetOf()
+                delay(50)
+                if (state.isEmpty()) {
+                    cancel()
+                }
+                _gridState.postValue(getNextScreen(state,gridSize))
             }
-            _gridState.value = getNextScreen(state)
         }
     }
 
