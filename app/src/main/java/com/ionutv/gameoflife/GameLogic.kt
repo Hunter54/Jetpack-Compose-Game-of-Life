@@ -11,7 +11,8 @@ fun getNextScreen(gridSize : Int, input: Array<Array<Boolean>>): Array<Array<Boo
                 for(y in -1..1){
                     try {
                         if(input[row + x][col + y]){
-                            ++neighbours
+                            if(x !=0 || y !=0)
+                                ++neighbours
                         }
                     }
                     catch (e : IndexOutOfBoundsException){

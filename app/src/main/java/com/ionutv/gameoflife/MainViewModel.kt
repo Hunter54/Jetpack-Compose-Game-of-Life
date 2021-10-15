@@ -28,11 +28,11 @@ class MainViewModel : ViewModel() {
 
     fun onGridUpdate(gridState: Array<Array<Boolean>>, cell: Pair<Int, Int>) {
         gridState[cell.first][cell.second] = !gridState[cell.first][cell.second]
-        _gridState.value = gridState
+        _gridState.value = gridState.copyOf()
     }
 
     fun resetGrid(gridSize : Int) {
-        _gridState.value = Array(gridSize){ Array(gridSize) {false} }
+        _gridState.value = Array(maxGridSize){ Array(maxGridSize) {false} }
     }
 
 }

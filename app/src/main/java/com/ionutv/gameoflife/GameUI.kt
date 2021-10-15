@@ -18,6 +18,7 @@ import com.ionutv.gameoflife.ui.theme.defaultSpacerSize
 import kotlinx.coroutines.*
 import java.util.concurrent.CancellationException
 
+val maxGridSize = 22
 
 @Composable
 fun DisplayApp(
@@ -79,7 +80,7 @@ fun GameGrid(
     modifier: Modifier = Modifier,
     onUpdate: (state: Array<Array<Boolean>>, cell: Pair<Int, Int>) -> Unit
 ) {
-    val gridState by viewModel.gridState.observeAsState(Array(gridSize){ Array(gridSize) {false} })
+    val gridState by viewModel.gridState.observeAsState(Array(maxGridSize){ Array(maxGridSize) {false} })
     Column(
         horizontalAlignment = Alignment.CenterHorizontally, modifier =
         modifier.fillMaxWidth()
