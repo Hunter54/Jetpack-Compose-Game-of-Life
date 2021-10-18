@@ -143,6 +143,8 @@ fun Controls(
     onReset: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var playColor by remember { mutableStateOf(false) }
+    var stopColor by remember { mutableStateOf(true) }
     Row(
 
         modifier = modifier
@@ -151,18 +153,28 @@ fun Controls(
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Button(onClick = {
-            onPlay()
-        }) {
+        Button(
+            colors = ButtonDefaults.buttonColors(if (playColor) MaterialTheme.colors.secondary else MaterialTheme.colors.primary),
+            onClick = {
+                playColor = true
+                stopColor = false
+                onPlay()
+            }) {
             Text(text = "Start")
         }
-        Button(onClick = {
-            onStop()
-        }) {
+        Button(
+            colors = ButtonDefaults.buttonColors(if (stopColor) MaterialTheme.colors.secondary else MaterialTheme.colors.primary),
+            onClick = {
+                playColor = false
+                stopColor = true
+                onStop()
+            }) {
             Text(text = "Stop")
         }
 
         Button(onClick = {
+            playColor = false
+            stopColor = true
             onReset()
         }) {
             Text(text = "Reset")
