@@ -23,10 +23,13 @@ import java.util.concurrent.CancellationException
 fun DisplayApp(
     scaffoldState: ScaffoldState,
     modifier: Modifier = Modifier,
-    viewModel: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    viewModel: MainViewModel
 
 ) {
     var gridSize by remember { mutableStateOf(14f) }
+    var job: Job? by rememberSaveable {
+        mutableStateOf(null)
+    }
 
     Scaffold(modifier = modifier.fillMaxSize(), scaffoldState = scaffoldState, topBar = {
         TopAppBar(title = {
@@ -38,10 +41,12 @@ fun DisplayApp(
                 .padding(8.dp)
                 .fillMaxSize(),
         ) {
-            Text(text = "Select a few boxes and then click start",modifier = Modifier
-                .height(defaultSpacerSize)
-                .align(Alignment.TopCenter)
-                .offset(y = defaultSpacerSize))
+            Text(
+                text = "Select a few boxes and then click start", modifier = Modifier
+                    .height(defaultSpacerSize)
+                    .align(Alignment.TopCenter)
+                    .offset(y = defaultSpacerSize)
+            )
 
             GameGrid(
                 viewModel, gridSize.toInt(),
@@ -58,10 +63,25 @@ fun DisplayApp(
                     .offset(y = -defaultSpacerSize),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Controls(viewModel, onPlay = {
-                    viewModel.play(gridSize.toInt())
-                })
-                SizeSlider(gridsize = gridSize) {
+                Controls(onPlay = {
+                    job?.cancel()
+                    job = viewModel.play(gridSize.toInt())
+                }, onStop = {
+                    job?.let {
+                        if (it.isActive) {
+                            it.cancel(CancellationException("User canceled"))
+                        }
+                    }
+                },
+                    onReset = {
+                        job?.let {
+                            if (it.isActive) {
+                                it.cancel(CancellationException("User canceled"))
+                            }
+                        }
+                        viewModel.resetGrid()
+                    })
+                SizeSlider(gridSize = gridSize) {
                     gridSize = it
                 }
             }
@@ -107,9 +127,9 @@ fun GameGrid(
 }
 
 @Composable
-fun SizeSlider(gridsize: Float, onGridSizeUpdated: (gridSize: Float) -> Unit) {
-    Text(text = "GridSize is ${gridsize.toInt()}")
-    Slider(value = gridsize,steps = 14, valueRange = 5f..22f,
+fun SizeSlider(gridSize: Float, onGridSizeUpdated: (gridSize: Float) -> Unit) {
+    Text(text = "GridSize is ${gridSize.toInt()}")
+    Slider(value = gridSize, steps = 14, valueRange = 5f..22f,
         modifier = Modifier.fillMaxWidth(0.75f),
         onValueChange = {
             onGridSizeUpdated(it)
@@ -117,10 +137,12 @@ fun SizeSlider(gridsize: Float, onGridSizeUpdated: (gridSize: Float) -> Unit) {
 }
 
 @Composable
-fun Controls(viewModel: MainViewModel, onPlay: () -> Job, modifier: Modifier = Modifier) {
-    var job: Job? by rememberSaveable {
-        mutableStateOf(null)
-    }
+fun Controls(
+    onPlay: () -> Unit,
+    onStop: () -> Unit,
+    onReset: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Row(
 
         modifier = modifier
@@ -130,28 +152,18 @@ fun Controls(viewModel: MainViewModel, onPlay: () -> Job, modifier: Modifier = M
         verticalAlignment = Alignment.CenterVertically
     ) {
         Button(onClick = {
-            job?.cancel()
-            job = onPlay()
+            onPlay()
         }) {
             Text(text = "Start")
         }
         Button(onClick = {
-            job?.let {
-                if (it.isActive) {
-                    it.cancel(CancellationException("User canceled"))
-                }
-            }
+            onStop()
         }) {
             Text(text = "Stop")
         }
 
         Button(onClick = {
-            job?.let {
-                if (it.isActive) {
-                    it.cancel(CancellationException("User canceled"))
-                }
-            }
-            viewModel.resetGrid()
+            onReset()
         }) {
             Text(text = "Reset")
         }
