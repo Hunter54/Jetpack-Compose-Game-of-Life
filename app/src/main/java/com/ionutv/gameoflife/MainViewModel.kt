@@ -17,7 +17,7 @@ class MainViewModel : ViewModel() {
         {
             while (isActive) {
                 val state = _gridState.value ?: mutableSetOf()
-                delay(50)
+                delay(100)
                 if (state.isEmpty()) {
                     cancel()
                 }
