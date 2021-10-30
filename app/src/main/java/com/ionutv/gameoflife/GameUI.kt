@@ -36,54 +36,44 @@ fun DisplayApp(
             Text(text = "Game of Life")
         })
     }) {
-        Box(
+        Column(
             modifier = Modifier
                 .padding(8.dp)
                 .fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceEvenly,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Select a few boxes and then click start", modifier = Modifier
-                    .height(defaultSpacerSize)
-                    .align(Alignment.TopCenter)
-                    .offset(y = defaultSpacerSize)
+                text = "Select a few boxes and then click start"
             )
 
             GameGrid(
-                viewModel, gridSize.toInt(),
-                Modifier
-                    .align(Alignment.Center)
-                    .offset(y = -defaultSpacerSize)
+                viewModel, gridSize.toInt()
             )
             { gridState, cell ->
                 viewModel.onGridUpdate(gridState, cell)
             }
-            Column(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(y = -defaultSpacerSize),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Controls(onPlay = {
-                    job?.cancel()
-                    job = viewModel.play(gridSize.toInt())
-                }, onStop = {
+
+            Controls(onPlay = {
+                job?.cancel()
+                job = viewModel.play(gridSize.toInt())
+            }, onStop = {
+                job?.let {
+                    if (it.isActive) {
+                        it.cancel(CancellationException("User canceled"))
+                    }
+                }
+            },
+                onReset = {
                     job?.let {
                         if (it.isActive) {
                             it.cancel(CancellationException("User canceled"))
                         }
                     }
-                },
-                    onReset = {
-                        job?.let {
-                            if (it.isActive) {
-                                it.cancel(CancellationException("User canceled"))
-                            }
-                        }
-                        viewModel.resetGrid()
-                    })
-                SizeSlider(gridSize = gridSize) {
-                    gridSize = it
-                }
+                    viewModel.resetGrid()
+                })
+            SizeSlider(gridSize = gridSize) {
+                gridSize = it
             }
         }
     }
